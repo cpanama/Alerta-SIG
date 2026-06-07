@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALERTA SIG | HSEQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+        body { font-family: 'Inter', sans-serif; background-color: #EEF2F6; color: #0F172A; }
+        .bg-navy { background-color: #182845; }
+        .text-navy { color: #182845; }
+        .rounded-card { border-radius: 24px; }
+        .shadow-elegant { box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .scan-circle { width: 140px; height: 140px; border: 3px solid #4A83F3; border-radius: 50%; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .scan-line { position: absolute; width: 100%; height: 3px; background: #18C48F; top: 0; animation: scan 2s linear infinite; }
+        @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+        button:active { transform: scale(0.98); }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- Header -->
+    <header class="bg-navy text-white p-6 rounded-b-[32px] shadow-lg">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">ALERTA SIG</h1>
+                <p class="text-xs opacity-70 mt-1 uppercase tracking-widest font-medium">Gestión de Procesos en Tiempo Real</p>
+            </div>
+            <div class="bg-[#18C48F] text-[10px] px-3 py-1 rounded-full font-bold uppercase shadow-md">● Operativo</div>
+        </div>
+    </header>
+
+    <!-- Vista Reporte -->
+    <main id="view-reporte" class="p-4 max-w-lg mx-auto">
+        <div class="bg-white p-6 rounded-card shadow-elegant border border-gray-100">
+            <h2 class="font-bold text-lg mb-6 text-navy">Registrar Hallazgo NFC</h2>
+            
+            <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider">ID Ubicación</label>
+            <div class="flex gap-3 mb-6">
+                <input id="nfc-result" type="text" placeholder="Escanear chip..." class="w-full px-5 py-4 bg-slate-50 rounded-card border-none outline-none focus:ring-2 focus:ring-[#4A83F3] text-sm transition">
+                <button onclick="iniciarEscaneo()" class="bg-navy text-white w-14 h-14 rounded-card flex items-center justify-center text-xl hover:bg-slate-800 transition shadow-lg">📡</button>
+            </div>
+
+            <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">Categoría</label>
+            <div id="tipo-hallazgo" class="grid grid-cols-3 gap-3 mb-6">
+                <button onclick="seleccionarTipo(this,'Seguridad')" class="p-4 border border-slate-200 rounded-card font-bold text-xs text-slate-600 hover:border-[#4A83F3] transition">⚠️ Seguridad</button>
+                <button onclick="seleccionarTipo(this,'Ambiente')" class="p-4 border border-slate-200 rounded-card font-bold text-xs text-slate-600 hover:border-[#18C48F] transition">🌿 Ambiente</button>
+                <button onclick="seleccionarTipo(this,'Calidad')" class="p-4 border border-slate-200 rounded-card font-bold text-xs text-slate-600 hover:border-[#F7A400] transition">✅ Calidad</button>
+            </div>
+
+            <textarea id="desc-hallazgo" class="w-full p-5 bg-slate-50 rounded-card border-none mb-6 text-sm h-28 focus:ring-2 focus:ring-[#4A83F3] transition" placeholder="Descripción detallada del hallazgo..."></textarea>
+            
+            <button onclick="enviarReporte()" class="w-full py-4 bg-navy text-white rounded-card font-bold text-sm tracking-wide shadow-lg">ENVIAR ALERTA</button>
+        </div>
+    </main>
+
+    <!-- Dashboard -->
+    <main id="view-dashboard" class="hidden p-4 max-w-lg mx-auto">
+        <h2 class="text-xl font-bold text-navy mb-5">Dashboard Ejecutivo</h2>
+        <div class="grid grid-cols-3 gap-3 mb-8">
+            <div class="bg-white p-4 rounded-card shadow-elegant text-center"><p class="text-2xl font-bold text-[#4A83F3]" id="total-p">0</p><p class="text-[9px] font-bold text-slate-400 uppercase">Pendientes</p></div>
+            <div class="bg-white p-4 rounded-card shadow-elegant text-center"><p class="text-2xl font-bold text-[#18C48F]">98%</p><p class="text-[9px] font-bold text-slate-400 uppercase">SLA</p></div>
+            <div class="bg-white p-4 rounded-card shadow-elegant text-center"><p class="text-2xl font-bold text-[#F7A400]">1.2h</p><p class="text-[9px] font-bold text-slate-400 uppercase">Cierre</p></div>
+        </div>
+        <div id="lista-trazabilidad" class="space-y-3"></div>
+    </main>
+
+    <!-- Modal Notificación/Validación -->
+    <div id="modal-notif" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white rounded-card p-8 w-full max-w-xs text-center shadow-2xl">
+            <div id="notif-icon" class="text-6xl mb-4"></div>
+            <h3 id="notif-title" class="font-bold text-navy text-xl mb-2"></h3>
+            <button onclick="document.getElementById('modal-notif').classList.add('hidden')" class="w-full py-4 bg-navy text-white rounded-card font-bold">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="fixed bottom-0 w-full bg-white border-t border-slate-100 p-4 flex justify-around z-50">
+        <button onclick="navegar('reporte')" class="text-center text-[#4A83F3] transition-all"><span class="text-lg">📁</span><br><span class="text-[9px] font-bold uppercase">Reporte</span></button>
+        <button onclick="navegar('dashboard')" class="text-center text-slate-400 transition-all"><span class="text-lg">📊</span><br><span class="text-[9px] font-bold uppercase">Dashboard</span></button>
+    </nav>
+
+    <script>
+        let tipoSel = "", totalP = 0;
+        function navegar(v) {
+            document.getElementById('view-reporte').classList.toggle('hidden', v !== 'reporte');
+            document.getElementById('view-dashboard').classList.toggle('hidden', v !== 'dashboard');
+        }
+        function seleccionarTipo(b, t) {
+            document.querySelectorAll('#tipo-hallazgo button').forEach(x => x.style.borderColor = "#E2E8F0");
+            b.style.borderColor = "#4A83F3"; tipoSel = t;
+        }
+        function mostrarNotif(icono, titulo) {
+            document.getElementById('notif-icon').innerText = icono;
+            document.getElementById('notif-title').innerText = titulo;
+            document.getElementById('modal-notif').classList.remove('hidden');
+        }
+        function iniciarEscaneo() {
+            // Placeholder visual de escaneo
+            mostrarNotif("📡", "Buscando chip NFC...");
+            setTimeout(() => { document.getElementById('nfc-result').value = "CHIP-A07"; document.getElementById('modal-notif').classList.add('hidden'); }, 1500);
+        }
+        function enviarReporte() {
+            const desc = document.getElementById('desc-hallazgo').value;
+            if(!tipoSel) return mostrarNotif("⚠️", "Seleccione una categoría");
+            if(!desc.trim()) return mostrarNotif("📝", "Debe incluir una descripción");
+
+            totalP++; document.getElementById('total-p').innerText = totalP;
+            document.getElementById('lista-trazabilidad').insertAdjacentHTML('afterbegin', `<div class="bg-white p-5 rounded-card flex justify-between items-center shadow-elegant border border-slate-100"><p class="text-sm font-bold text-navy">${tipoSel}</p><button onclick="this.parentElement.remove(); totalP--; document.getElementById('total-p').innerText = totalP;" class="bg-slate-100 px-4 py-2 rounded-xl text-[10px] font-bold text-slate-500 uppercase">Cerrar</button></div>`);
+            
+            mostrarNotif("🚨", "Alerta enviada correctamente");
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        }
+    </script>
+</body>
+</html>
